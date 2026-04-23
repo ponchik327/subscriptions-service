@@ -72,7 +72,7 @@ func (r *Repository) Update(ctx context.Context, sub domain.Subscription) (domai
 		Set("user_id", sub.UserID).
 		Set("start_date", sub.StartDate.Time).
 		Set("end_date", endDate).
-		Set("updated_at", time.Now().UTC()).
+		Set("updated_at", sq.Expr("NOW()")).
 		Where(sq.Eq{"id": sub.ID}).
 		Suffix("RETURNING id, service_name, price, user_id, start_date, end_date, created_at, updated_at").
 		ToSql()
