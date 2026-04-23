@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -20,15 +21,16 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/ponchik327/subscriptions-service/internal/domain"
-	"github.com/ponchik327/subscriptions-service/internal/handler"
-	"github.com/ponchik327/subscriptions-service/internal/repository"
-	"github.com/ponchik327/subscriptions-service/internal/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
+
+	"github.com/ponchik327/subscriptions-service/internal/domain"
+	"github.com/ponchik327/subscriptions-service/internal/handler"
+	"github.com/ponchik327/subscriptions-service/internal/repository"
+	"github.com/ponchik327/subscriptions-service/internal/service"
 )
 
 type testApp struct {
@@ -63,7 +65,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatalf("create migrator: %v", err)
 	}
-	if err := mig.Up(); err != nil && err != migrate.ErrNoChange {
+	if err := mig.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		log.Fatalf("run migrations: %v", err)
 	}
 

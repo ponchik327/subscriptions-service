@@ -4,6 +4,7 @@ package repository_test
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 	"testing"
@@ -14,13 +15,14 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/ponchik327/subscriptions-service/internal/domain"
-	"github.com/ponchik327/subscriptions-service/internal/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"github.com/testcontainers/testcontainers-go"
+
+	"github.com/ponchik327/subscriptions-service/internal/domain"
+	"github.com/ponchik327/subscriptions-service/internal/repository"
 )
 
 var testPool *pgxpool.Pool
@@ -49,7 +51,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatalf("create migrator: %v", err)
 	}
-	if err := mig.Up(); err != nil && err != migrate.ErrNoChange {
+	if err := mig.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		log.Fatalf("run migrations: %v", err)
 	}
 
@@ -235,10 +237,10 @@ func TestRepository_Summary(t *testing.T) {
 	to := domain.NewMonthYear(8, 2025)   // August 2025  (6 months)
 
 	tests := []struct {
-		name        string
-		subs        []domain.Subscription
-		filter      repository.SummaryFilter
-		wantTotal   int64
+		name      string
+		subs      []domain.Subscription
+		filter    repository.SummaryFilter
+		wantTotal int64
 	}{
 		{
 			name: "1: sub fully inside [from,to]",
