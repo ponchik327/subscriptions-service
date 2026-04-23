@@ -15,7 +15,7 @@ import (
 	"github.com/ponchik327/subscriptions-service/internal/service"
 )
 
-func newService(repo *mocks.SubscriptionRepository) *service.Service {
+func newService(repo *mocks.MockSubscriptionRepository) *service.Service {
 	return service.New(repo, slog.Default())
 }
 
@@ -52,7 +52,7 @@ func TestService_Summary_PeriodValidation(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			repo := mocks.NewSubscriptionRepository(t)
+			repo := mocks.NewMockSubscriptionRepository(t)
 			if !tc.wantErr {
 				repo.EXPECT().Summary(context.Background(), domain.SummaryFilter{
 					From: tc.from,
@@ -75,7 +75,7 @@ func TestService_Summary_PeriodValidation(t *testing.T) {
 
 func TestService_Summary_MapsRepoError(t *testing.T) {
 	t.Parallel()
-	repo := mocks.NewSubscriptionRepository(t)
+	repo := mocks.NewMockSubscriptionRepository(t)
 	from := domain.NewMonthYear(1, 2025)
 	to := domain.NewMonthYear(3, 2025)
 
@@ -89,7 +89,7 @@ func TestService_Summary_MapsRepoError(t *testing.T) {
 
 func TestService_GetByID_MapsNotFound(t *testing.T) {
 	t.Parallel()
-	repo := mocks.NewSubscriptionRepository(t)
+	repo := mocks.NewMockSubscriptionRepository(t)
 	id := uuid.New()
 
 	repo.EXPECT().GetByID(context.Background(), id).Return(domain.Subscription{}, repository.ErrNotFound)
@@ -101,7 +101,7 @@ func TestService_GetByID_MapsNotFound(t *testing.T) {
 
 func TestService_Update_MapsNotFound(t *testing.T) {
 	t.Parallel()
-	repo := mocks.NewSubscriptionRepository(t)
+	repo := mocks.NewMockSubscriptionRepository(t)
 	sub := domain.Subscription{ID: uuid.New()}
 
 	repo.EXPECT().Update(context.Background(), sub).Return(domain.Subscription{}, repository.ErrNotFound)
@@ -113,7 +113,7 @@ func TestService_Update_MapsNotFound(t *testing.T) {
 
 func TestService_Delete_MapsNotFound(t *testing.T) {
 	t.Parallel()
-	repo := mocks.NewSubscriptionRepository(t)
+	repo := mocks.NewMockSubscriptionRepository(t)
 	id := uuid.New()
 
 	repo.EXPECT().Delete(context.Background(), id).Return(repository.ErrNotFound)

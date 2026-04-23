@@ -19,8 +19,6 @@ import (
 	"github.com/ponchik327/subscriptions-service/internal/service"
 )
 
-//go:generate mockery --name SubscriptionService --output ../mocks --outpkg mocks --case snake --with-expecter
-
 // SubscriptionService is the interface the handler layer depends on.
 type SubscriptionService interface {
 	Create(ctx context.Context, sub domain.Subscription) (domain.Subscription, error)

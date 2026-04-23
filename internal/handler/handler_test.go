@@ -68,7 +68,7 @@ func makeTestSub() domain.Subscription {
 
 func TestHandler_Create_Success(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	sub := makeTestSub()
 	svc.EXPECT().Create(mock.Anything, mock.MatchedBy(func(s domain.Subscription) bool {
 		return s.ServiceName == "Netflix" && s.Price == 800
@@ -90,7 +90,7 @@ func TestHandler_Create_Success(t *testing.T) {
 
 func TestHandler_Create_InvalidJSON(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	req := httptest.NewRequest(http.MethodPost, "/subscriptions", bytes.NewBufferString("{bad json"))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
@@ -104,7 +104,7 @@ func TestHandler_Create_InvalidJSON(t *testing.T) {
 
 func TestHandler_Create_InvalidStartDate(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	rr := doRequest(t, newRouter(svc), http.MethodPost, "/subscriptions", map[string]any{
 		"service_name": "Netflix",
 		"price":        800,
@@ -116,7 +116,7 @@ func TestHandler_Create_InvalidStartDate(t *testing.T) {
 
 func TestHandler_Create_MissingServiceName(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	rr := doRequest(t, newRouter(svc), http.MethodPost, "/subscriptions", map[string]any{
 		"price":      800,
 		"user_id":    uuid.New().String(),
@@ -130,7 +130,7 @@ func TestHandler_Create_MissingServiceName(t *testing.T) {
 
 func TestHandler_Create_EndDateBeforeStartDate(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	rr := doRequest(t, newRouter(svc), http.MethodPost, "/subscriptions", map[string]any{
 		"service_name": "Netflix",
 		"price":        800,
@@ -146,7 +146,7 @@ func TestHandler_Create_EndDateBeforeStartDate(t *testing.T) {
 
 func TestHandler_Create_ServiceError(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	svc.EXPECT().Create(mock.Anything, mock.Anything).Return(domain.Subscription{}, assert.AnError)
 
 	rr := doRequest(t, newRouter(svc), http.MethodPost, "/subscriptions", map[string]any{
@@ -162,7 +162,7 @@ func TestHandler_Create_ServiceError(t *testing.T) {
 
 func TestHandler_GetByID_Success(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	sub := makeTestSub()
 	svc.EXPECT().GetByID(mock.Anything, sub.ID).Return(sub, nil)
 
@@ -175,7 +175,7 @@ func TestHandler_GetByID_Success(t *testing.T) {
 
 func TestHandler_GetByID_InvalidUUID(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	rr := doRequest(t, newRouter(svc), http.MethodGet, "/subscriptions/not-a-uuid", nil)
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 	var e errResp
@@ -185,7 +185,7 @@ func TestHandler_GetByID_InvalidUUID(t *testing.T) {
 
 func TestHandler_GetByID_NotFound(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	id := uuid.New()
 	svc.EXPECT().GetByID(mock.Anything, id).Return(domain.Subscription{}, service.ErrNotFound)
 
@@ -197,7 +197,7 @@ func TestHandler_GetByID_NotFound(t *testing.T) {
 
 func TestHandler_Update_Success(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	sub := makeTestSub()
 	svc.EXPECT().Update(mock.Anything, mock.MatchedBy(func(s domain.Subscription) bool {
 		return s.ID == sub.ID && s.ServiceName == "Updated"
@@ -214,7 +214,7 @@ func TestHandler_Update_Success(t *testing.T) {
 
 func TestHandler_Update_NotFound(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	id := uuid.New()
 	svc.EXPECT().Update(mock.Anything, mock.Anything).Return(domain.Subscription{}, service.ErrNotFound)
 
@@ -229,7 +229,7 @@ func TestHandler_Update_NotFound(t *testing.T) {
 
 func TestHandler_Update_InvalidBody(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	id := uuid.New()
 	req := httptest.NewRequest(http.MethodPut, "/subscriptions/"+id.String(), bytes.NewBufferString("{bad"))
 	req.Header.Set("Content-Type", "application/json")
@@ -242,7 +242,7 @@ func TestHandler_Update_InvalidBody(t *testing.T) {
 
 func TestHandler_Delete_Success(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	id := uuid.New()
 	svc.EXPECT().Delete(mock.Anything, id).Return(nil)
 
@@ -252,7 +252,7 @@ func TestHandler_Delete_Success(t *testing.T) {
 
 func TestHandler_Delete_NotFound(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	id := uuid.New()
 	svc.EXPECT().Delete(mock.Anything, id).Return(service.ErrNotFound)
 
@@ -264,7 +264,7 @@ func TestHandler_Delete_NotFound(t *testing.T) {
 
 func TestHandler_List_DefaultPagination(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	svc.EXPECT().List(mock.Anything, mock.MatchedBy(func(f domain.ListFilter) bool {
 		return f.Limit == 50 && f.Offset == 0
 	})).Return([]domain.Subscription{makeTestSub()}, nil)
@@ -275,7 +275,7 @@ func TestHandler_List_DefaultPagination(t *testing.T) {
 
 func TestHandler_List_CustomPagination(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	svc.EXPECT().List(mock.Anything, mock.MatchedBy(func(f domain.ListFilter) bool {
 		return f.Limit == 10 && f.Offset == 20
 	})).Return(nil, nil)
@@ -286,7 +286,7 @@ func TestHandler_List_CustomPagination(t *testing.T) {
 
 func TestHandler_List_FilterByUserID(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	uid := uuid.New()
 	svc.EXPECT().List(mock.Anything, mock.MatchedBy(func(f domain.ListFilter) bool {
 		return f.UserID != nil && *f.UserID == uid
@@ -298,7 +298,7 @@ func TestHandler_List_FilterByUserID(t *testing.T) {
 
 func TestHandler_List_NegativeLimitReturns400(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	rr := doRequest(t, newRouter(svc), http.MethodGet, "/subscriptions?limit=-1", nil)
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 }
@@ -307,7 +307,7 @@ func TestHandler_List_NegativeLimitReturns400(t *testing.T) {
 
 func TestHandler_Summary_Success(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	from := domain.NewMonthYear(1, 2025)
 	to := domain.NewMonthYear(6, 2025)
 
@@ -326,7 +326,7 @@ func TestHandler_Summary_Success(t *testing.T) {
 
 func TestHandler_Summary_MissingFrom(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	rr := doRequest(t, newRouter(svc), http.MethodGet, "/subscriptions/summary?to=06-2025", nil)
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 	var e errResp
@@ -336,14 +336,14 @@ func TestHandler_Summary_MissingFrom(t *testing.T) {
 
 func TestHandler_Summary_MissingTo(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	rr := doRequest(t, newRouter(svc), http.MethodGet, "/subscriptions/summary?from=01-2025", nil)
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 }
 
 func TestHandler_Summary_FromAfterTo(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	rr := doRequest(t, newRouter(svc), http.MethodGet, "/subscriptions/summary?from=12-2025&to=01-2025", nil)
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 	var e errResp
@@ -353,7 +353,7 @@ func TestHandler_Summary_FromAfterTo(t *testing.T) {
 
 func TestHandler_Summary_InvalidFromDate(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	rr := doRequest(t, newRouter(svc), http.MethodGet, "/subscriptions/summary?from=baddate&to=06-2025", nil)
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 	var e errResp
@@ -363,7 +363,7 @@ func TestHandler_Summary_InvalidFromDate(t *testing.T) {
 
 func TestHandler_Summary_FiltersPassedToService(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	uid := uuid.New()
 	sn := "Netflix"
 
@@ -385,7 +385,7 @@ func TestHandler_Summary_FiltersPassedToService(t *testing.T) {
 
 func TestHandler_Healthz(t *testing.T) {
 	t.Parallel()
-	svc := mocks.NewSubscriptionService(t)
+	svc := mocks.NewMockSubscriptionService(t)
 	rr := doRequest(t, newRouter(svc), http.MethodGet, "/healthz", nil)
 	assert.Equal(t, http.StatusOK, rr.Code)
 

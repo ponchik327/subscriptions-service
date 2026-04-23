@@ -1,0 +1,22 @@
+with-expecter: true
+issue-845-fix: true
+resolve-type-alias: false
+disable-version-string: true
+
+packages:
+  github.com/ponchik327/subscriptions-service/internal/handler:
+    interfaces:
+      SubscriptionService:
+        config:
+          dir: "internal/mocks"
+          outpkg: mocks
+          filename: "subscription_service.go"
+          mockname: "MockSubscriptionService"
+  github.com/ponchik327/subscriptions-service/internal/service:
+    interfaces:
+      SubscriptionRepository:
+        config:
+          dir: "internal/mocks"
+          outpkg: mocks
+          filename: "subscription_repository.go"
+          mockname: "MockSubscriptionRepository"

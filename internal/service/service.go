@@ -12,8 +12,6 @@ import (
 	"github.com/ponchik327/subscriptions-service/internal/repository"
 )
 
-//go:generate mockery --name SubscriptionRepository --output ../mocks --outpkg mocks --case snake --with-expecter
-
 // SubscriptionRepository is the interface the service requires from the persistence layer.
 type SubscriptionRepository interface {
 	Create(ctx context.Context, sub domain.Subscription) (domain.Subscription, error)
