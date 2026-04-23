@@ -2,6 +2,8 @@ package config
 
 import (
 	"flag"
+	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -40,8 +42,12 @@ func Load() (*Config, error) {
 
 	var cfg Config
 	if err := cleanenv.ReadConfig(*configPath, &cfg); err != nil {
+		if !os.IsNotExist(err) {
+			return nil, fmt.Errorf("read config file: %w", err)
+		}
+		log.Printf("config file not found, using env vars")
 		if err := cleanenv.ReadEnv(&cfg); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("read env config: %w", err)
 		}
 	}
 	return &cfg, nil
