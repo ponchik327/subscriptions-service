@@ -12,10 +12,11 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	httpswagger "github.com/swaggo/http-swagger"
+
 	"github.com/ponchik327/subscriptions-service/internal/domain"
 	appmiddleware "github.com/ponchik327/subscriptions-service/internal/middleware"
 	"github.com/ponchik327/subscriptions-service/internal/service"
-	httpswagger "github.com/swaggo/http-swagger"
 )
 
 //go:generate mockery --name SubscriptionService --output ../mocks --outpkg mocks --case snake --with-expecter
@@ -310,18 +311,22 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 // @Failure      500  {object}  errResponse
 // @Router       /subscriptions [get]
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-	if err != nil || limit == 0 {
-		limit = 50
-	}
-	if limit < 0 {
-		writeError(w, http.StatusBadRequest, "limit must be >= 0", "INVALID_LIMIT")
-		return
+	limit := uint64(50)
+	if raw := r.URL.Query().Get("limit"); raw != "" {
+		if len(raw) > 0 && raw[0] == '-' {
+			writeError(w, http.StatusBadRequest, "limit must be >= 0", "INVALID_LIMIT")
+			return
+		}
+		if parsed, err := strconv.ParseUint(raw, 10, 64); err == nil && parsed > 0 {
+			limit = parsed
+		}
 	}
 
-	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	if offset < 0 {
-		offset = 0
+	offset := uint64(0)
+	if raw := r.URL.Query().Get("offset"); raw != "" && raw[0] != '-' {
+		if parsed, err := strconv.ParseUint(raw, 10, 64); err == nil {
+			offset = parsed
+		}
 	}
 
 	filter := domain.ListFilter{Limit: limit, Offset: offset}

@@ -18,6 +18,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/ponchik327/subscriptions-service/internal/config"
 	"github.com/ponchik327/subscriptions-service/internal/handler"
 	"github.com/ponchik327/subscriptions-service/internal/logger"
@@ -28,23 +29,29 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	cfg, err := config.Load()
 	if err != nil {
 		slog.Error("load config", slog.String("err", err.Error()))
-		os.Exit(1)
+		return err
 	}
 
 	log := logger.New(cfg.Log.Level)
 
 	if err := runMigrations(cfg.Postgres.DSN, cfg.Postgres.MigrationsPath, log); err != nil {
 		log.Error("migrations failed", slog.String("err", err.Error()))
-		os.Exit(1)
+		return err
 	}
 
 	pool, err := newPool(context.Background(), cfg, log)
 	if err != nil {
 		log.Error("connect to postgres", slog.String("err", err.Error()))
-		os.Exit(1)
+		return err
 	}
 	defer pool.Close()
 
@@ -79,10 +86,11 @@ func main() {
 
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Error("server error", slog.String("err", err.Error()))
-		os.Exit(1)
+		return err
 	}
 	<-done
 	log.Info("server stopped")
+	return nil
 }
 
 func runMigrations(dsn, migrationsPath string, log *slog.Logger) error {

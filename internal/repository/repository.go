@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/ponchik327/subscriptions-service/internal/domain"
 )
 
@@ -108,8 +109,8 @@ func (r *Repository) List(ctx context.Context, filter domain.ListFilter) ([]doma
 	qb := psql.Select("id, service_name, price, user_id, start_date, end_date, created_at, updated_at").
 		From("subscriptions").
 		OrderBy("created_at DESC").
-		Limit(uint64(filter.Limit)).
-		Offset(uint64(filter.Offset))
+		Limit(filter.Limit).
+		Offset(filter.Offset)
 
 	if filter.UserID != nil {
 		qb = qb.Where(sq.Eq{"user_id": *filter.UserID})

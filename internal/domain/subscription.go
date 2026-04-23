@@ -27,6 +27,6 @@ type SummaryResult struct {
 type ListFilter struct {
 	UserID      *uuid.UUID
 	ServiceName *string
-	Limit       int
-	Offset      int
+	Limit       uint64
+	Offset      uint64
 }
