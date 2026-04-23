@@ -310,6 +310,8 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 // @Failure      400  {object}  errResponse
 // @Failure      500  {object}  errResponse
 // @Router       /subscriptions [get]
+const maxLimit = uint64(1000)
+
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	limit := uint64(50)
 	if raw := r.URL.Query().Get("limit"); raw != "" {
@@ -318,6 +320,9 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if parsed, err := strconv.ParseUint(raw, 10, 64); err == nil && parsed > 0 {
+			if parsed > maxLimit {
+				parsed = maxLimit
+			}
 			limit = parsed
 		}
 	}
