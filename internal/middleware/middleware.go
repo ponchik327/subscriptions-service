@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -56,11 +57,12 @@ func Logger(logger *slog.Logger) func(http.Handler) http.Handler {
 func Recoverer(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			defer func() {
+			defer func(ctx context.Context) {
 				if rec := recover(); rec != nil {
-					logger.ErrorContext(r.Context(), "panic recovered",
+					logger.ErrorContext(ctx, "panic recovered",
 						slog.Any("panic", rec),
-						slog.String("request_id", GetRequestID(r.Context())),
+						slog.String("stack", string(debug.Stack())),
+						slog.String("request_id", GetRequestID(ctx)),
 					)
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusInternalServerError)
@@ -69,7 +71,7 @@ func Recoverer(logger *slog.Logger) func(http.Handler) http.Handler {
 						"code":  "INTERNAL_ERROR",
 					})
 				}
-			}()
+			}(r.Context())
 			next.ServeHTTP(w, r)
 		})
 	}

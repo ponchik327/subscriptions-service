@@ -143,7 +143,7 @@ func TestRepository_Update(t *testing.T) {
 	repo := repository.New(testPool)
 
 	original := insertSub(t, makeSub("Yandex Plus", 400, uuid.New(), 1, 2025, nil, nil))
-	time.Sleep(time.Millisecond) // ensure updated_at changes
+	time.Sleep(10 * time.Millisecond) // ensure updated_at changes
 
 	updated := original
 	updated.ServiceName = "Yandex Plus Pro"

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -28,20 +27,17 @@ type Config struct {
 	} `yaml:"log"`
 }
 
-func Load() (*Config, error) {
-	configPath := flag.String("config", "", "path to config file")
-	flag.Parse()
-
-	if *configPath == "" {
+func Load(configPath string) (*Config, error) {
+	if configPath == "" {
 		if v := os.Getenv("CONFIG_PATH"); v != "" {
-			*configPath = v
+			configPath = v
 		} else {
-			*configPath = "./config/config.yaml"
+			configPath = "./config/config.yaml"
 		}
 	}
 
 	var cfg Config
-	if err := cleanenv.ReadConfig(*configPath, &cfg); err != nil {
+	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
 		if !os.IsNotExist(err) {
 			return nil, fmt.Errorf("read config file: %w", err)
 		}

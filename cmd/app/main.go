@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -36,7 +37,10 @@ func main() {
 }
 
 func run() error {
-	cfg, err := config.Load()
+	configPath := flag.String("config", "", "path to config file")
+	flag.Parse()
+
+	cfg, err := config.Load(*configPath)
 	if err != nil {
 		slog.Error("load config", slog.String("err", err.Error()))
 		return err

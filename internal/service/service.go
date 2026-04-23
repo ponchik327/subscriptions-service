@@ -46,6 +46,7 @@ func (s *Service) Create(ctx context.Context, sub domain.Subscription) (domain.S
 	if err != nil {
 		return domain.Subscription{}, fmt.Errorf("service.Create: %w", err)
 	}
+	s.logger.InfoContext(ctx, "subscription created", slog.String("id", created.ID.String()))
 	return created, nil
 }
 
@@ -78,6 +79,7 @@ func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
 		}
 		return fmt.Errorf("service.Delete: %w", err)
 	}
+	s.logger.InfoContext(ctx, "subscription deleted", slog.String("id", id.String()))
 	return nil
 }
 

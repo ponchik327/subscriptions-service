@@ -23,6 +23,8 @@ linters:
     - nilerr
     - errorlint
     - sqlclosecheck
+    - rowserrcheck
+    - contextcheck
   settings:
     revive:
       rules:

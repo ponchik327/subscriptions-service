@@ -126,7 +126,7 @@ func (h *Handler) Healthz(w http.ResponseWriter, r *http.Request) {
 
 // ── DTOs ─────────────────────────────────────────────────────────────────────
 
-type createRequest struct {
+type subscriptionRequest struct {
 	ServiceName string            `json:"service_name" validate:"required"`
 	Price       int               `json:"price"        validate:"min=0"`
 	UserID      uuid.UUID         `json:"user_id"      validate:"required"`
@@ -134,13 +134,10 @@ type createRequest struct {
 	EndDate     *domain.MonthYear `json:"end_date"`
 }
 
-type updateRequest struct {
-	ServiceName string            `json:"service_name" validate:"required"`
-	Price       int               `json:"price"        validate:"min=0"`
-	UserID      uuid.UUID         `json:"user_id"      validate:"required"`
-	StartDate   domain.MonthYear  `json:"start_date"   validate:"required"`
-	EndDate     *domain.MonthYear `json:"end_date"`
-}
+type (
+	createRequest = subscriptionRequest
+	updateRequest = subscriptionRequest
+)
 
 // Create godoc
 // @Summary      Create subscription
@@ -155,8 +152,10 @@ type updateRequest struct {
 // @Router       /subscriptions [post]
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var req createRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid JSON: "+err.Error(), "INVALID_JSON")
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "INVALID_JSON")
 		return
 	}
 
@@ -237,8 +236,10 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req updateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid JSON: "+err.Error(), "INVALID_JSON")
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "INVALID_JSON")
 		return
 	}
 
@@ -315,16 +316,15 @@ const maxLimit = uint64(1000)
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	limit := uint64(50)
 	if raw := r.URL.Query().Get("limit"); raw != "" {
-		if len(raw) > 0 && raw[0] == '-' {
-			writeError(w, http.StatusBadRequest, "limit must be >= 0", "INVALID_LIMIT")
+		parsed, err := strconv.ParseUint(raw, 10, 64)
+		if err != nil || parsed == 0 {
+			writeError(w, http.StatusBadRequest, "limit must be a positive integer", "INVALID_LIMIT")
 			return
 		}
-		if parsed, err := strconv.ParseUint(raw, 10, 64); err == nil && parsed > 0 {
-			if parsed > maxLimit {
-				parsed = maxLimit
-			}
-			limit = parsed
+		if parsed > maxLimit {
+			parsed = maxLimit
 		}
+		limit = parsed
 	}
 
 	offset := uint64(0)
@@ -386,13 +386,13 @@ func (h *Handler) Summary(w http.ResponseWriter, r *http.Request) {
 
 	from, err := domain.ParseMonthYear(rawFrom)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid from: "+err.Error(), "INVALID_DATE")
+		writeError(w, http.StatusBadRequest, "invalid from date, expected MM-YYYY", "INVALID_DATE")
 		return
 	}
 
 	to, err := domain.ParseMonthYear(rawTo)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid to: "+err.Error(), "INVALID_DATE")
+		writeError(w, http.StatusBadRequest, "invalid to date, expected MM-YYYY", "INVALID_DATE")
 		return
 	}
 
