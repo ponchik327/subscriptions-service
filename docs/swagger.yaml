@@ -1,0 +1,304 @@
+basePath: /
+definitions:
+  domain.MonthYear:
+    properties:
+      time.Time:
+        type: string
+    type: object
+  domain.Subscription:
+    properties:
+      created_at:
+        type: string
+      end_date:
+        $ref: '#/definitions/domain.MonthYear'
+      id:
+        type: string
+      price:
+        type: integer
+      service_name:
+        type: string
+      start_date:
+        $ref: '#/definitions/domain.MonthYear'
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  domain.SummaryResult:
+    properties:
+      currency:
+        type: string
+      from:
+        type: string
+      to:
+        type: string
+      total:
+        type: integer
+    type: object
+  handler.createRequest:
+    properties:
+      end_date:
+        $ref: '#/definitions/domain.MonthYear'
+      price:
+        minimum: 0
+        type: integer
+      service_name:
+        type: string
+      start_date:
+        $ref: '#/definitions/domain.MonthYear'
+      user_id:
+        type: string
+    required:
+    - service_name
+    - start_date
+    - user_id
+    type: object
+  handler.errResponse:
+    properties:
+      code:
+        type: string
+      error:
+        type: string
+    type: object
+  handler.updateRequest:
+    properties:
+      end_date:
+        $ref: '#/definitions/domain.MonthYear'
+      price:
+        minimum: 0
+        type: integer
+      service_name:
+        type: string
+      start_date:
+        $ref: '#/definitions/domain.MonthYear'
+      user_id:
+        type: string
+    required:
+    - service_name
+    - start_date
+    - user_id
+    type: object
+info:
+  contact: {}
+  description: REST service for managing user online subscriptions
+  title: Subscriptions Service API
+  version: "1.0"
+paths:
+  /healthz:
+    get:
+      description: Returns 200 if the service is up
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - health
+  /subscriptions:
+    get:
+      parameters:
+      - default: 50
+        description: Page size
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Page offset
+        in: query
+        name: offset
+        type: integer
+      - description: Filter by user UUID
+        in: query
+        name: user_id
+        type: string
+      - description: Filter by service name
+        in: query
+        name: service_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Subscription'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errResponse'
+      summary: List subscriptions
+      tags:
+      - subscriptions
+    post:
+      consumes:
+      - application/json
+      description: Creates a new subscription and returns it with the generated id
+      parameters:
+      - description: Subscription payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.createRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Subscription'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errResponse'
+      summary: Create subscription
+      tags:
+      - subscriptions
+  /subscriptions/{id}:
+    delete:
+      parameters:
+      - description: Subscription UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errResponse'
+      summary: Delete subscription
+      tags:
+      - subscriptions
+    get:
+      parameters:
+      - description: Subscription UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Subscription'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errResponse'
+      summary: Get subscription by ID
+      tags:
+      - subscriptions
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Subscription UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated subscription
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.updateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Subscription'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errResponse'
+      summary: Update subscription
+      tags:
+      - subscriptions
+  /subscriptions/summary:
+    get:
+      description: Returns total cost for subscriptions overlapping the given period
+      parameters:
+      - description: Period start (MM-YYYY)
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: Period end (MM-YYYY)
+        in: query
+        name: to
+        required: true
+        type: string
+      - description: Filter by user UUID
+        in: query
+        name: user_id
+        type: string
+      - description: Filter by service name
+        in: query
+        name: service_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.SummaryResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errResponse'
+      summary: Aggregate subscription costs
+      tags:
+      - subscriptions
+swagger: "2.0"

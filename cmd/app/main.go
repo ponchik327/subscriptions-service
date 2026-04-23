@@ -1,0 +1,123 @@
+// @title           Subscriptions Service API
+// @version         1.0
+// @description     REST service for managing user online subscriptions
+// @BasePath        /
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/ponchik327/subscriptions-service/internal/config"
+	"github.com/ponchik327/subscriptions-service/internal/handler"
+	"github.com/ponchik327/subscriptions-service/internal/logger"
+	"github.com/ponchik327/subscriptions-service/internal/repository"
+	"github.com/ponchik327/subscriptions-service/internal/service"
+
+	_ "github.com/ponchik327/subscriptions-service/docs"
+)
+
+func main() {
+	cfg, err := config.Load()
+	if err != nil {
+		slog.Error("load config", slog.String("err", err.Error()))
+		os.Exit(1)
+	}
+
+	log := logger.New(cfg.Log.Level)
+
+	if err := runMigrations(cfg.Postgres.DSN, cfg.Postgres.MigrationsPath, log); err != nil {
+		log.Error("migrations failed", slog.String("err", err.Error()))
+		os.Exit(1)
+	}
+
+	pool, err := newPool(context.Background(), cfg, log)
+	if err != nil {
+		log.Error("connect to postgres", slog.String("err", err.Error()))
+		os.Exit(1)
+	}
+	defer pool.Close()
+
+	repo := repository.New(pool)
+	svc := service.New(repo, log)
+	router := handler.NewRouter(svc, pool, log)
+
+	addr := fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port)
+	srv := &http.Server{
+		Addr:         addr,
+		Handler:      router,
+		ReadTimeout:  cfg.HTTP.ReadTimeout,
+		WriteTimeout: cfg.HTTP.WriteTimeout,
+	}
+
+	log.Info("starting server", slog.String("addr", addr))
+
+	done := make(chan struct{})
+	go func() {
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		<-quit
+		log.Info("shutting down server")
+
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.HTTP.ShutdownTimeout)
+		defer cancel()
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Error("shutdown error", slog.String("err", err.Error()))
+		}
+		close(done)
+	}()
+
+	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Error("server error", slog.String("err", err.Error()))
+		os.Exit(1)
+	}
+	<-done
+	log.Info("server stopped")
+}
+
+func runMigrations(dsn, migrationsPath string, log *slog.Logger) error {
+	m, err := migrate.New(migrationsPath, dsn)
+	if err != nil {
+		return fmt.Errorf("create migrator: %w", err)
+	}
+	if err := m.Up(); err != nil {
+		if errors.Is(err, migrate.ErrNoChange) {
+			log.Info("migrations: no change")
+			return nil
+		}
+		return fmt.Errorf("run migrations: %w", err)
+	}
+	log.Info("migrations applied")
+	return nil
+}
+
+func newPool(ctx context.Context, cfg *config.Config, log *slog.Logger) (*pgxpool.Pool, error) {
+	poolCfg, err := pgxpool.ParseConfig(cfg.Postgres.DSN)
+	if err != nil {
+		return nil, err
+	}
+	poolCfg.MaxConns = cfg.Postgres.MaxConns
+
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, err
+	}
+
+	log.Info("connected to postgres")
+	return pool, nil
+}
