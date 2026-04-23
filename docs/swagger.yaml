@@ -86,7 +86,7 @@ info:
 paths:
   /healthz:
     get:
-      description: Returns 200 if the service is up
+      description: Returns 200 if the service is up and the DB is reachable, 503 otherwise
       produces:
       - application/json
       responses:
@@ -96,50 +96,16 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: Health check
       tags:
       - health
   /subscriptions:
-    get:
-      parameters:
-      - default: 50
-        description: Page size
-        in: query
-        name: limit
-        type: integer
-      - default: 0
-        description: Page offset
-        in: query
-        name: offset
-        type: integer
-      - description: Filter by user UUID
-        in: query
-        name: user_id
-        type: string
-      - description: Filter by service name
-        in: query
-        name: service_name
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/domain.Subscription'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handler.errResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handler.errResponse'
-      summary: List subscriptions
-      tags:
-      - subscriptions
     post:
       consumes:
       - application/json
