@@ -19,7 +19,7 @@ type Config struct {
 	Postgres struct {
 		DSN            string `yaml:"dsn"             env:"POSTGRES_DSN"             env-required:"true"`
 		MaxConns       int32  `yaml:"max_conns"       env:"POSTGRES_MAX_CONNS"       env-default:"10"`
-		MigrationsPath string `yaml:"migrations_path" env:"POSTGRES_MIGRATIONS_PATH" env-default:"file://migrations"`
+		MigrationsPath string `yaml:"migrations_path" env:"POSTGRES_MIGRATIONS_PATH" env-default:"file:///migrations"`
 	} `yaml:"postgres"`
 	Log struct {
 		Level string `yaml:"level" env:"LOG_LEVEL" env-default:"info"`

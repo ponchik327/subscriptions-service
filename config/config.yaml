@@ -7,7 +7,7 @@ http:
 
 postgres:
   max_conns: 10
-  migrations_path: "file://migrations"
+  migrations_path: "file:///migrations"
 
 log:
   level: "info"
