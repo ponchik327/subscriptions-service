@@ -1,0 +1,20 @@
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      glob: "*.go"
+      run: golangci-lint run --fix ./...
+    tidy:
+      glob: "{go.mod,go.sum}"
+      run: go mod tidy
+    test:
+      glob: "*.go"
+      run: go test -short -count=1 ./internal/domain/... ./internal/handler/... ./internal/service/...
+
+pre-push:
+  parallel: true
+  commands:
+    test-race:
+      run: go test -race -count=1 ./internal/domain/... ./internal/handler/... ./internal/service/...
+    vuln:
+      run: govulncheck ./...

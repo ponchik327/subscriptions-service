@@ -1,0 +1,40 @@
+version: "2"
+
+run:
+  timeout: 5m
+  build-tags:
+    - integration
+    - e2e
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - gofumpt
+    - goimports
+    - revive
+    - gocritic
+    - gosec
+    - misspell
+    - unconvert
+    - unparam
+    - bodyclose
+    - nilerr
+    - errorlint
+    - sqlclosecheck
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/ponchik327/subscriptions-service
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
