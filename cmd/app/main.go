@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -98,6 +99,16 @@ func runMigrations(dsn, migrationsPath string, log *slog.Logger) error {
 	if err != nil {
 		return fmt.Errorf("create migrator: %w", err)
 	}
+	defer func() {
+		srcErr, dbErr := m.Close()
+		if srcErr != nil {
+			log.Error("close migrator source", slog.String("err", srcErr.Error()))
+		}
+		if dbErr != nil {
+			log.Error("close migrator db", slog.String("err", dbErr.Error()))
+		}
+	}()
+
 	if err := m.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
 			log.Info("migrations: no change")
@@ -121,7 +132,9 @@ func newPool(ctx context.Context, cfg *config.Config, log *slog.Logger) (*pgxpoo
 		return nil, err
 	}
 
-	if err := pool.Ping(ctx); err != nil {
+	pingCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	if err := pool.Ping(pingCtx); err != nil {
 		pool.Close()
 		return nil, err
 	}
