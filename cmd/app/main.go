@@ -66,6 +66,7 @@ func run() error {
 		Handler:      router,
 		ReadTimeout:  cfg.HTTP.ReadTimeout,
 		WriteTimeout: cfg.HTTP.WriteTimeout,
+		IdleTimeout:  cfg.HTTP.ReadTimeout * 3,
 	}
 
 	log.Info("starting server", slog.String("addr", addr))
