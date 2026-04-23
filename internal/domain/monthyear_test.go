@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ponchik327/subscriptions-service/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ponchik327/subscriptions-service/internal/domain"
 )
 
 func TestMonthYear_UnmarshalJSON(t *testing.T) {

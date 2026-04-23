@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/ponchik327/subscriptions-service/internal/domain"
 	"github.com/ponchik327/subscriptions-service/internal/mocks"
 	"github.com/ponchik327/subscriptions-service/internal/repository"
 	"github.com/ponchik327/subscriptions-service/internal/service"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func newService(repo *mocks.SubscriptionRepository) *service.Service {
