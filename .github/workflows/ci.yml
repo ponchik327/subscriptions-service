@@ -15,7 +15,8 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - uses: golangci/golangci-lint-action@v6
+          cache: true
+      - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.11.4
 
@@ -61,5 +62,5 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - run: go install golang.org/x/vuln/cmd/govulncheck@latest
+      - run: go install golang.org/x/vuln/cmd/govulncheck@v1.3.0
       - run: govulncheck ./...
