@@ -5,11 +5,8 @@ package mocks
 import (
 	context "context"
 
-	mock "github.com/stretchr/testify/mock"
-
 	domain "github.com/ponchik327/subscriptions-service/internal/domain"
-
-	repository "github.com/ponchik327/subscriptions-service/internal/repository"
+	mock "github.com/stretchr/testify/mock"
 
 	uuid "github.com/google/uuid"
 )
@@ -248,7 +245,7 @@ func (_c *SubscriptionRepository_List_Call) RunAndReturn(run func(context.Contex
 }
 
 // Summary provides a mock function with given fields: ctx, f
-func (_m *SubscriptionRepository) Summary(ctx context.Context, f repository.SummaryFilter) (int64, error) {
+func (_m *SubscriptionRepository) Summary(ctx context.Context, f domain.SummaryFilter) (int64, error) {
 	ret := _m.Called(ctx, f)
 
 	if len(ret) == 0 {
@@ -257,16 +254,16 @@ func (_m *SubscriptionRepository) Summary(ctx context.Context, f repository.Summ
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, repository.SummaryFilter) (int64, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, domain.SummaryFilter) (int64, error)); ok {
 		return rf(ctx, f)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, repository.SummaryFilter) int64); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, domain.SummaryFilter) int64); ok {
 		r0 = rf(ctx, f)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, repository.SummaryFilter) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, domain.SummaryFilter) error); ok {
 		r1 = rf(ctx, f)
 	} else {
 		r1 = ret.Error(1)
@@ -282,14 +279,14 @@ type SubscriptionRepository_Summary_Call struct {
 
 // Summary is a helper method to define mock.On call
 //   - ctx context.Context
-//   - f repository.SummaryFilter
+//   - f domain.SummaryFilter
 func (_e *SubscriptionRepository_Expecter) Summary(ctx interface{}, f interface{}) *SubscriptionRepository_Summary_Call {
 	return &SubscriptionRepository_Summary_Call{Call: _e.mock.On("Summary", ctx, f)}
 }
 
-func (_c *SubscriptionRepository_Summary_Call) Run(run func(ctx context.Context, f repository.SummaryFilter)) *SubscriptionRepository_Summary_Call {
+func (_c *SubscriptionRepository_Summary_Call) Run(run func(ctx context.Context, f domain.SummaryFilter)) *SubscriptionRepository_Summary_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(repository.SummaryFilter))
+		run(args[0].(context.Context), args[1].(domain.SummaryFilter))
 	})
 	return _c
 }
@@ -299,7 +296,7 @@ func (_c *SubscriptionRepository_Summary_Call) Return(_a0 int64, _a1 error) *Sub
 	return _c
 }
 
-func (_c *SubscriptionRepository_Summary_Call) RunAndReturn(run func(context.Context, repository.SummaryFilter) (int64, error)) *SubscriptionRepository_Summary_Call {
+func (_c *SubscriptionRepository_Summary_Call) RunAndReturn(run func(context.Context, domain.SummaryFilter) (int64, error)) *SubscriptionRepository_Summary_Call {
 	_c.Call.Return(run)
 	return _c
 }

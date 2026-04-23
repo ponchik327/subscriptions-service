@@ -30,3 +30,10 @@ type ListFilter struct {
 	Limit       uint64
 	Offset      uint64
 }
+
+type SummaryFilter struct {
+	From        MonthYear
+	To          MonthYear
+	UserID      *uuid.UUID
+	ServiceName *string
+}

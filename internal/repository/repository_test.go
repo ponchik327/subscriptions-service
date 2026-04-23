@@ -239,77 +239,77 @@ func TestRepository_Summary(t *testing.T) {
 	tests := []struct {
 		name      string
 		subs      []domain.Subscription
-		filter    repository.SummaryFilter
+		filter    domain.SummaryFilter
 		wantTotal int64
 	}{
 		{
 			name: "1: sub fully inside [from,to]",
 			// May-2025 to Jun-2025 → 2 months
 			subs:      []domain.Subscription{makeSub("A", 100, userA, 5, 2025, ptr(6), ptr(2025))},
-			filter:    repository.SummaryFilter{From: from, To: to},
+			filter:    domain.SummaryFilter{From: from, To: to},
 			wantTotal: 200, // 100 * 2
 		},
 		{
 			name: "2: starts before from, ends inside",
 			// Jan-2025 to May-2025, period Mar-Aug → overlap Mar-May = 3 months
 			subs:      []domain.Subscription{makeSub("A", 100, userA, 1, 2025, ptr(5), ptr(2025))},
-			filter:    repository.SummaryFilter{From: from, To: to},
+			filter:    domain.SummaryFilter{From: from, To: to},
 			wantTotal: 300, // 100 * 3
 		},
 		{
 			name: "3: starts inside, ends after to",
 			// Jun-2025 to Nov-2025, period Mar-Aug → overlap Jun-Aug = 3 months
 			subs:      []domain.Subscription{makeSub("A", 100, userA, 6, 2025, ptr(11), ptr(2025))},
-			filter:    repository.SummaryFilter{From: from, To: to},
+			filter:    domain.SummaryFilter{From: from, To: to},
 			wantTotal: 300, // 100 * 3
 		},
 		{
 			name: "4: covers entire period (before from and after to)",
 			// Jan-2025 to Dec-2025, period Mar-Aug = 6 months
 			subs:      []domain.Subscription{makeSub("A", 100, userA, 1, 2025, ptr(12), ptr(2025))},
-			filter:    repository.SummaryFilter{From: from, To: to},
+			filter:    domain.SummaryFilter{From: from, To: to},
 			wantTotal: 600, // 100 * 6
 		},
 		{
 			name: "5: end_date=NULL, starts inside",
 			// May-2025, no end → overlap May-Aug = 4 months
 			subs:      []domain.Subscription{makeSub("A", 100, userA, 5, 2025, nil, nil)},
-			filter:    repository.SummaryFilter{From: from, To: to},
+			filter:    domain.SummaryFilter{From: from, To: to},
 			wantTotal: 400, // 100 * 4
 		},
 		{
 			name: "6: end_date=NULL, starts before from",
 			// Jan-2025, no end → overlap Mar-Aug = 6 months
 			subs:      []domain.Subscription{makeSub("A", 100, userA, 1, 2025, nil, nil)},
-			filter:    repository.SummaryFilter{From: from, To: to},
+			filter:    domain.SummaryFilter{From: from, To: to},
 			wantTotal: 600, // 100 * 6
 		},
 		{
 			name: "7: ended before from (filtered out)",
 			// Jan-2025 to Feb-2025
 			subs:      []domain.Subscription{makeSub("A", 100, userA, 1, 2025, ptr(2), ptr(2025))},
-			filter:    repository.SummaryFilter{From: from, To: to},
+			filter:    domain.SummaryFilter{From: from, To: to},
 			wantTotal: 0,
 		},
 		{
 			name: "8: starts after to (filtered out)",
 			// Sep-2025 onwards
 			subs:      []domain.Subscription{makeSub("A", 100, userA, 9, 2025, nil, nil)},
-			filter:    repository.SummaryFilter{From: from, To: to},
+			filter:    domain.SummaryFilter{From: from, To: to},
 			wantTotal: 0,
 		},
 		{
 			name: "9: exactly 1 month, coincides with from",
 			// Mar-2025 to Mar-2025 → 1 month
 			subs:      []domain.Subscription{makeSub("A", 100, userA, 3, 2025, ptr(3), ptr(2025))},
-			filter:    repository.SummaryFilter{From: from, To: to},
+			filter:    domain.SummaryFilter{From: from, To: to},
 			wantTotal: 100, // 100 * 1
 		},
 		{
 			name: "10: exactly 1 month, coincides with to",
 			// Aug-2025 to Aug-2025 → 1 month
 			subs:      []domain.Subscription{makeSub("A", 100, userA, 8, 2025, ptr(8), ptr(2025))},
-			filter:    repository.SummaryFilter{From: from, To: to},
+			filter:    domain.SummaryFilter{From: from, To: to},
 			wantTotal: 100, // 100 * 1
 		},
 		{
@@ -320,7 +320,7 @@ func TestRepository_Summary(t *testing.T) {
 				makeSub("Netflix", 100, userA, 1, 2025, ptr(12), ptr(2025)),
 				makeSub("Netflix", 100, userB, 1, 2025, ptr(12), ptr(2025)),
 			},
-			filter:    repository.SummaryFilter{From: from, To: to, UserID: &userA},
+			filter:    domain.SummaryFilter{From: from, To: to, UserID: &userA},
 			wantTotal: 600,
 		},
 		{
@@ -331,7 +331,7 @@ func TestRepository_Summary(t *testing.T) {
 				makeSub("Netflix", 100, userA, 1, 2025, ptr(12), ptr(2025)),
 				makeSub("Spotify", 200, userA, 1, 2025, ptr(12), ptr(2025)),
 			},
-			filter:    repository.SummaryFilter{From: from, To: to, ServiceName: ptr("Netflix")},
+			filter:    domain.SummaryFilter{From: from, To: to, ServiceName: ptr("Netflix")},
 			wantTotal: 600,
 		},
 		{
@@ -343,13 +343,13 @@ func TestRepository_Summary(t *testing.T) {
 				makeSub("Spotify", 200, userA, 1, 2025, ptr(12), ptr(2025)),
 				makeSub("Netflix", 100, userB, 1, 2025, ptr(12), ptr(2025)),
 			},
-			filter:    repository.SummaryFilter{From: from, To: to, UserID: &userA, ServiceName: ptr("Netflix")},
+			filter:    domain.SummaryFilter{From: from, To: to, UserID: &userA, ServiceName: ptr("Netflix")},
 			wantTotal: 600,
 		},
 		{
 			name:      "14: empty selection returns 0 not error",
 			subs:      nil,
-			filter:    repository.SummaryFilter{From: from, To: to},
+			filter:    domain.SummaryFilter{From: from, To: to},
 			wantTotal: 0,
 		},
 	}

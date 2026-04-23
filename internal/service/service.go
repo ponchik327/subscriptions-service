@@ -21,7 +21,7 @@ type SubscriptionRepository interface {
 	Update(ctx context.Context, sub domain.Subscription) (domain.Subscription, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	List(ctx context.Context, filter domain.ListFilter) ([]domain.Subscription, error)
-	Summary(ctx context.Context, f repository.SummaryFilter) (int64, error)
+	Summary(ctx context.Context, f domain.SummaryFilter) (int64, error)
 }
 
 type SummaryParams struct {
@@ -94,7 +94,7 @@ func (s *Service) Summary(ctx context.Context, p SummaryParams) (domain.SummaryR
 		return domain.SummaryResult{}, fmt.Errorf("from must be <= to")
 	}
 
-	total, err := s.repo.Summary(ctx, repository.SummaryFilter{
+	total, err := s.repo.Summary(ctx, domain.SummaryFilter{
 		From:        p.From,
 		To:          p.To,
 		UserID:      p.UserID,

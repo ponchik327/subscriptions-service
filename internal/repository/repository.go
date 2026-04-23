@@ -141,18 +141,10 @@ func (r *Repository) List(ctx context.Context, filter domain.ListFilter) ([]doma
 	return subs, rows.Err()
 }
 
-// SummaryFilter holds parameters for the aggregation query.
-type SummaryFilter struct {
-	From        domain.MonthYear
-	To          domain.MonthYear
-	UserID      *uuid.UUID
-	ServiceName *string
-}
-
 // Summary computes the total subscription cost over [from, to] using a single SQL query.
 // $1 = from date, $2 = to date; optional filters use $3, $4, … appended manually to avoid
 // squirrel placeholder collision with the hardcoded $1/$2 in the aggregation expression.
-func (r *Repository) Summary(ctx context.Context, f SummaryFilter) (int64, error) {
+func (r *Repository) Summary(ctx context.Context, f domain.SummaryFilter) (int64, error) {
 	args := []interface{}{f.From.Time, f.To.Time}
 
 	extraWhere := ""

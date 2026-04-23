@@ -54,7 +54,7 @@ func TestService_Summary_PeriodValidation(t *testing.T) {
 			t.Parallel()
 			repo := mocks.NewSubscriptionRepository(t)
 			if !tc.wantErr {
-				repo.EXPECT().Summary(context.Background(), repository.SummaryFilter{
+				repo.EXPECT().Summary(context.Background(), domain.SummaryFilter{
 					From: tc.from,
 					To:   tc.to,
 				}).Return(int64(0), nil)
@@ -79,7 +79,7 @@ func TestService_Summary_MapsRepoError(t *testing.T) {
 	from := domain.NewMonthYear(1, 2025)
 	to := domain.NewMonthYear(3, 2025)
 
-	repo.EXPECT().Summary(context.Background(), repository.SummaryFilter{From: from, To: to}).
+	repo.EXPECT().Summary(context.Background(), domain.SummaryFilter{From: from, To: to}).
 		Return(int64(0), assert.AnError)
 
 	svc := newService(repo)
