@@ -91,7 +91,7 @@ func (s *Service) List(ctx context.Context, filter domain.ListFilter) ([]domain.
 
 func (s *Service) Summary(ctx context.Context, p SummaryParams) (domain.SummaryResult, error) {
 	if !p.From.IsZero() && !p.To.IsZero() && p.From.After(p.To.Time) {
-		return domain.SummaryResult{}, fmt.Errorf("from must be <= to")
+		return domain.SummaryResult{}, ErrInvalidPeriod
 	}
 
 	total, err := s.repo.Summary(ctx, domain.SummaryFilter{

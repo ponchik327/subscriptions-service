@@ -413,6 +413,10 @@ func (h *Handler) Summary(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.svc.Summary(r.Context(), params)
 	if err != nil {
+		if errors.Is(err, service.ErrInvalidPeriod) {
+			writeError(w, http.StatusBadRequest, err.Error(), "INVALID_DATE_RANGE")
+			return
+		}
 		h.logger.ErrorContext(r.Context(), "Summary", slog.String("err", err.Error()))
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
