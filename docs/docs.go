@@ -17,14 +17,37 @@ const docTemplate = `{
     "paths": {
         "/healthz": {
             "get": {
-                "description": "Returns 200 if the service is up and the DB is reachable, 503 otherwise",
+                "description": "Returns 200 if the process is alive",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "health"
                 ],
-                "summary": "Health check",
+                "summary": "Liveness probe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/readyz": {
+            "get": {
+                "description": "Returns 200 if the service is ready to serve traffic (DB is reachable), 503 otherwise",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Readiness probe",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -362,6 +385,7 @@ const docTemplate = `{
                 },
                 "price": {
                     "type": "integer",
+                    "maximum": 2147483647,
                     "minimum": 0
                 },
                 "service_name": {
@@ -399,6 +423,7 @@ const docTemplate = `{
                 },
                 "price": {
                     "type": "integer",
+                    "maximum": 2147483647,
                     "minimum": 0
                 },
                 "service_name": {

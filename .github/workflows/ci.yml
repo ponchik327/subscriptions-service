@@ -53,6 +53,8 @@ jobs:
           go-version-file: go.mod
           cache: true
       - run: go test -tags=e2e -count=1 -timeout=180s ./test/e2e/...
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"
 
   swagger:
     name: Swagger Verify

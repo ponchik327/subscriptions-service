@@ -40,6 +40,7 @@ definitions:
       end_date:
         $ref: '#/definitions/domain.MonthYear'
       price:
+        maximum: 2147483647
         minimum: 0
         type: integer
       service_name:
@@ -65,6 +66,7 @@ definitions:
       end_date:
         $ref: '#/definitions/domain.MonthYear'
       price:
+        maximum: 2147483647
         minimum: 0
         type: integer
       service_name:
@@ -86,7 +88,23 @@ info:
 paths:
   /healthz:
     get:
-      description: Returns 200 if the service is up and the DB is reachable, 503 otherwise
+      description: Returns 200 if the process is alive
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Liveness probe
+      tags:
+      - health
+  /readyz:
+    get:
+      description: Returns 200 if the service is ready to serve traffic (DB is reachable),
+        503 otherwise
       produces:
       - application/json
       responses:
@@ -102,7 +120,7 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Health check
+      summary: Readiness probe
       tags:
       - health
   /subscriptions:
