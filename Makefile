@@ -3,9 +3,17 @@ MAIN        := ./cmd/app
 SWAG_OUT    := docs
 GOPATH_BIN  := $(shell go env GOPATH)/bin
 
-.PHONY: build run lint swag mocks \
+# Load local overrides (.env.local) if present — takes priority over defaults below.
+-include .env.local
+
+# Local-dev defaults (used by run / migrate-* when no .env.local is present).
+POSTGRES_DSN             ?= postgres://app:app@localhost:5432/subscriptions?sslmode=disable
+POSTGRES_MIGRATIONS_PATH ?= file://migrations
+
+.PHONY: build run dev lint swag mocks \
         test test-integration test-e2e test-all \
         migrate-up migrate-down \
+        infra-up infra-down \
         docker-up docker-down \
         help dev-setup fmt tidy vuln
 
@@ -14,8 +22,10 @@ GOPATH_BIN  := $(shell go env GOPATH)/bin
 build:
 	CGO_ENABLED=0 go build -ldflags="-s -w" -o $(BINARY) $(MAIN)
 
+dev: infra-up run ## Start DB (if not running) and run the app locally
+
 run: build
-	./$(BINARY)
+	POSTGRES_DSN="$(POSTGRES_DSN)" POSTGRES_MIGRATIONS_PATH="$(POSTGRES_MIGRATIONS_PATH)" ./$(BINARY)
 
 lint:
 	golangci-lint run ./...
@@ -51,7 +61,15 @@ migrate-up:
 migrate-down:
 	migrate -path migrations -database "$(POSTGRES_DSN)" down
 
-# ── Docker ────────────────────────────────────────────────────────────────────
+# ── Infrastructure (local dev — DB only, no app) ──────────────────────────────
+
+infra-up:
+	docker compose up postgres -d --wait
+
+infra-down:
+	docker compose down
+
+# ── Docker (full stack) ───────────────────────────────────────────────────────
 
 docker-up:
 	docker compose up --build -d
