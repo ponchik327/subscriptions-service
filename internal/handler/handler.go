@@ -62,6 +62,7 @@ func NewRouter(svc SubscriptionService, db Pinger, logger *slog.Logger) http.Han
 	r.Use(chimiddleware.StripSlashes)
 
 	r.Get("/healthz", h.Healthz)
+	r.Get("/readyz", h.Readyz)
 	r.Get("/metrics", promhttp.Handler().ServeHTTP)
 	r.Get("/swagger/*", httpswagger.Handler())
 
@@ -115,16 +116,27 @@ func notFoundOrInternal(w http.ResponseWriter, err error) {
 }
 
 // Healthz godoc
-// @Summary      Health check
-// @Description  Returns 200 if the service is up and the DB is reachable, 503 otherwise
+// @Summary      Liveness probe
+// @Description  Returns 200 if the process is alive
+// @Tags         health
+// @Produce      json
+// @Success      200  {object}  map[string]string
+// @Router       /healthz [get]
+func (h *Handler) Healthz(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+// Readyz godoc
+// @Summary      Readiness probe
+// @Description  Returns 200 if the service is ready to serve traffic (DB is reachable), 503 otherwise
 // @Tags         health
 // @Produce      json
 // @Success      200  {object}  map[string]string
 // @Failure      503  {object}  map[string]string
-// @Router       /healthz [get]
-func (h *Handler) Healthz(w http.ResponseWriter, r *http.Request) {
+// @Router       /readyz [get]
+func (h *Handler) Readyz(w http.ResponseWriter, r *http.Request) {
 	if err := h.db.Ping(r.Context()); err != nil {
-		h.logger.ErrorContext(r.Context(), "healthz db ping failed", slog.String("err", err.Error()))
+		h.logger.ErrorContext(r.Context(), "readyz db ping failed", slog.String("err", err.Error()))
 		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "unavailable"})
 		return
 	}
@@ -135,7 +147,7 @@ func (h *Handler) Healthz(w http.ResponseWriter, r *http.Request) {
 
 type subscriptionRequest struct {
 	ServiceName string            `json:"service_name" validate:"required"`
-	Price       int               `json:"price"        validate:"min=0"`
+	Price       int               `json:"price"        validate:"min=0,max=2147483647"`
 	UserID      uuid.UUID         `json:"user_id"      validate:"required"`
 	StartDate   domain.MonthYear  `json:"start_date"   validate:"required"`
 	EndDate     *domain.MonthYear `json:"end_date"`
