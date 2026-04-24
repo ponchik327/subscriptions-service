@@ -12,7 +12,9 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	httpswagger "github.com/swaggo/http-swagger"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/ponchik327/subscriptions-service/internal/domain"
 	appmiddleware "github.com/ponchik327/subscriptions-service/internal/middleware"
@@ -52,12 +54,15 @@ func NewRouter(svc SubscriptionService, db Pinger, logger *slog.Logger) http.Han
 	}
 
 	r := chi.NewRouter()
+	r.Use(appmiddleware.SpanNamer)
+	r.Use(appmiddleware.Metrics)
 	r.Use(appmiddleware.RequestID)
 	r.Use(appmiddleware.Logger(logger))
 	r.Use(appmiddleware.Recoverer(logger))
 	r.Use(chimiddleware.StripSlashes)
 
 	r.Get("/healthz", h.Healthz)
+	r.Get("/metrics", promhttp.Handler().ServeHTTP)
 	r.Get("/swagger/*", httpswagger.Handler())
 
 	r.Route("/subscriptions", func(r chi.Router) {
@@ -69,7 +74,11 @@ func NewRouter(svc SubscriptionService, db Pinger, logger *slog.Logger) http.Han
 		r.Delete("/{id}", h.Delete)
 	})
 
-	return r
+	return otelhttp.NewHandler(r, "http.server",
+		otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
+			return r.Method + " " + r.URL.Path
+		}),
+	)
 }
 
 // errResponse is the canonical error format.

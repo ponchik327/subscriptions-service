@@ -6,10 +6,15 @@ import (
 	"log/slog"
 	"net/http"
 	"runtime/debug"
+	"strconv"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/trace"
+
+	appmetrics "github.com/ponchik327/subscriptions-service/internal/metrics"
 )
 
 type ctxKey string
@@ -52,6 +57,55 @@ func Logger(logger *slog.Logger) func(http.Handler) http.Handler {
 			)
 		})
 	}
+}
+
+// Metrics records Prometheus HTTP metrics. It must sit inside the chi router
+// chain so chi.RouteContext is populated by the time next.ServeHTTP returns.
+func Metrics(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		appmetrics.HTTPRequestsInFlight.Inc()
+		defer appmetrics.HTTPRequestsInFlight.Dec()
+
+		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+		start := time.Now()
+
+		next.ServeHTTP(ww, r)
+
+		route := ""
+		if rctx := chi.RouteContext(r.Context()); rctx != nil {
+			route = rctx.RoutePattern()
+		}
+		if route == "" {
+			route = r.URL.Path
+		}
+
+		status := ww.Status()
+		if status == 0 {
+			status = http.StatusOK
+		}
+
+		appmetrics.HTTPRequestDuration.
+			WithLabelValues(r.Method, route).
+			Observe(time.Since(start).Seconds())
+		appmetrics.HTTPRequestsTotal.
+			WithLabelValues(r.Method, route, strconv.Itoa(status)).
+			Inc()
+	})
+}
+
+// SpanNamer updates the active OTel span name to "METHOD /route/pattern" after
+// chi has matched the route. Place it inside the chi chain so the route context
+// is available. The span itself is created by otelhttp outside the chi router.
+func SpanNamer(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+
+		if rctx := chi.RouteContext(r.Context()); rctx != nil {
+			if pattern := rctx.RoutePattern(); pattern != "" {
+				trace.SpanFromContext(r.Context()).SetName(r.Method + " " + pattern)
+			}
+		}
+	})
 }
 
 func Recoverer(logger *slog.Logger) func(http.Handler) http.Handler {

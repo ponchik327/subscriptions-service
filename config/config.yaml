@@ -11,3 +11,7 @@ postgres:
 
 log:
   level: "info"
+
+telemetry:
+  service_name: "subscriptions-service"
+  otlp_endpoint: ""

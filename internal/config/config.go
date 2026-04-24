@@ -25,6 +25,10 @@ type Config struct {
 	Log struct {
 		Level string `yaml:"level" env:"LOG_LEVEL" env-default:"info"`
 	} `yaml:"log"`
+	Telemetry struct {
+		ServiceName  string `yaml:"service_name"  env:"OTEL_SERVICE_NAME"              env-default:"subscriptions-service"`
+		OTLPEndpoint string `yaml:"otlp_endpoint" env:"OTEL_EXPORTER_OTLP_ENDPOINT"`
+	} `yaml:"telemetry"`
 }
 
 func Load(configPath string) (*Config, error) {

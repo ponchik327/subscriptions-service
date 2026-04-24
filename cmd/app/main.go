@@ -20,12 +20,15 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/ponchik327/subscriptions-service/internal/config"
 	"github.com/ponchik327/subscriptions-service/internal/handler"
 	"github.com/ponchik327/subscriptions-service/internal/logger"
+	"github.com/ponchik327/subscriptions-service/internal/metrics"
 	"github.com/ponchik327/subscriptions-service/internal/repository"
 	"github.com/ponchik327/subscriptions-service/internal/service"
+	"github.com/ponchik327/subscriptions-service/internal/telemetry"
 
 	_ "github.com/ponchik327/subscriptions-service/docs"
 )
@@ -53,12 +56,23 @@ func run() error {
 		return err
 	}
 
+	shutdownTracing, err := telemetry.Setup(context.Background(), cfg.Telemetry.ServiceName, cfg.Telemetry.OTLPEndpoint)
+	if err != nil {
+		log.Error("init telemetry", slog.String("err", err.Error()))
+		return err
+	}
+
 	pool, err := newPool(context.Background(), cfg, log)
 	if err != nil {
 		log.Error("connect to postgres", slog.String("err", err.Error()))
 		return err
 	}
 	defer pool.Close()
+
+	if err := prometheus.Register(metrics.NewPoolCollector(pool)); err != nil {
+		log.Error("register pool collector", slog.String("err", err.Error()))
+		return err
+	}
 
 	repo := repository.New(pool)
 	svc := service.New(repo, log)
@@ -87,6 +101,13 @@ func run() error {
 		if err := srv.Shutdown(ctx); err != nil {
 			log.Error("shutdown error", slog.String("err", err.Error()))
 		}
+
+		telCtx, telCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer telCancel()
+		if err := shutdownTracing(telCtx); err != nil {
+			log.Error("telemetry shutdown error", slog.String("err", err.Error()))
+		}
+
 		close(done)
 	}()
 

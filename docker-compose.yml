@@ -24,5 +24,29 @@ services:
     ports:
       - "8080:8080"
 
+  prometheus:
+    image: prom/prometheus:v3.3.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - app
+
+  # Jaeger all-in-one: UI on :16686, OTLP HTTP on :4318.
+  # Enable tracing by setting OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318 in .env.
+  jaeger:
+    image: jaegertracing/all-in-one:1.68
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+
 volumes:
   pgdata:
+  prometheus_data:
