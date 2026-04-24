@@ -96,20 +96,55 @@ curl http://localhost:8080/healthz
 http://localhost:8080/swagger/index.html
 ```
 
-## Переменные окружения
+### Prometheus-метрики
+```
+http://localhost:8080/metrics
+```
+
+## Конфигурация
+
+Конфигурация разделена на два уровня:
+
+- **`config/config.yaml`** — все настройки приложения (таймауты, пул соединений, уровень логов и т.д.). Хранится в репозитории, изменяется через коммит.
+- **ENV-переменные** — только секреты и деплой-специфичные значения (DSN с паролем, путь к конфигу, OTLP-эндпоинт). ENV всегда переопределяет YAML.
+
+### Обязательные ENV-переменные
+
+| Переменная | Описание |
+|---|---|
+| `POSTGRES_DSN` | DSN подключения к PostgreSQL (содержит credentials) |
+
+### Опциональные ENV-переменные
 
 | Переменная | Описание | По умолчанию |
 |---|---|---|
-| `POSTGRES_DSN` | DSN подключения к PostgreSQL | **обязательна** |
-| `HTTP_HOST` | Адрес для прослушивания | `0.0.0.0` |
-| `HTTP_PORT` | Порт | `8080` |
-| `HTTP_READ_TIMEOUT` | Таймаут чтения | `10s` |
-| `HTTP_WRITE_TIMEOUT` | Таймаут записи | `10s` |
-| `HTTP_SHUTDOWN_TIMEOUT` | Таймаут graceful shutdown | `5s` |
-| `POSTGRES_MAX_CONNS` | Макс. соединений в пуле | `10` |
-| `POSTGRES_MIGRATIONS_PATH` | Путь к миграциям | `file://migrations` |
-| `LOG_LEVEL` | Уровень логирования (`debug`/`info`/`warn`/`error`) | `info` |
 | `CONFIG_PATH` | Путь к yaml-конфигу | `./config/config.yaml` |
+| `POSTGRES_MIGRATIONS_PATH` | Путь к миграциям | `file:///migrations` (абс., для Docker) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP-эндпоинт для трейсинга; трейсинг отключён если не задан | — |
+| `OTEL_SERVICE_NAME` | Имя сервиса в трейсах | `subscriptions-service` |
+
+> Остальные параметры (`HTTP_PORT`, `LOG_LEVEL`, таймауты, `POSTGRES_MAX_CONNS`) настраиваются в `config/config.yaml` и при необходимости переопределяются через соответствующие ENV-переменные (см. теги `env:` в `internal/config/config.go`).
+
+## Observability
+
+При запуске через `make docker-up` поднимаются два дополнительных сервиса:
+
+| Сервис | URL | Назначение |
+|---|---|---|
+| Prometheus | `http://localhost:9090` | Scrape `/metrics` каждые 15 сек |
+| Jaeger | `http://localhost:16686` | UI для просмотра трейсов |
+
+**Включить трейсинг** (Docker): раскомментировать в `.env`:
+```
+OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
+```
+
+**Включить трейсинг** (локально):
+```bash
+docker run -d -p 16686:16686 -p 4318:4318 jaegertracing/all-in-one:latest
+# добавить в .env.local:
+# OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4318
+```
 
 ## Тестирование
 
@@ -169,6 +204,8 @@ make dev-setup
 | `make run` | Собрать и запустить приложение (БД должна быть уже запущена) |
 | `make infra-up` | Поднять только PostgreSQL в Docker (без приложения) |
 | `make infra-down` | Остановить PostgreSQL |
+| `make docker-up` | Поднять полный стек: app + postgres + prometheus + jaeger |
+| `make docker-down` | Остановить полный стек |
 | `make migrate-up` | Применить миграции вручную |
 | `make migrate-down` | Откатить миграции вручную |
 | `make lint` | Запустить линтер |
